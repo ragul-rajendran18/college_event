@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, ArrowLeft, Share2, Star, Info, User, CheckCircle, Zap } from 'lucide-react';
 import { events as mockEvents } from '../data/events';
 import RegistrationForm from '../components/RegistrationForm';
+import { supabase } from '../supabaseClient';
 
 const EventDetail = () => {
     const { id } = useParams();
@@ -15,9 +16,17 @@ const EventDetail = () => {
         window.scrollTo(0, 0);
         const fetchEvent = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/events/${id}`);
-                const data = await response.json();
-                if (response.ok && data && !data.error) {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data) {
                     setEvent(data);
                 } else {
                     const mockEvent = mockEvents.find(e => e.id === id);

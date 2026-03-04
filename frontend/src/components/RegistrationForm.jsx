@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, CreditCard, ArrowRight, ArrowLeft, Terminal, Cpu, CheckCircle2 } from 'lucide-react';
-import axios from 'axios';
+import { supabase } from '../supabaseClient';
 
 const RegistrationForm = ({ eventId, eventTitle, price }) => {
     const [step, setStep] = useState(1);
@@ -39,22 +39,29 @@ const RegistrationForm = ({ eventId, eventTitle, price }) => {
         setErrors({});
 
         try {
-            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-            const response = await axios.post(`${apiBase}/register`, {
-                event_id: eventId,
-                full_name: formData.fullName,
-                email: formData.email,
-                student_id: formData.studentId,
-                department: formData.department,
-                payment_method: formData.paymentMethod
-            });
+            const { data, error } = await supabase
+                .from('registrations')
+                .insert([
+                    {
+                        event_id: eventId,
+                        full_name: formData.fullName,
+                        email: formData.email,
+                        student_id: formData.studentId,
+                        department: formData.department,
+                        payment_method: formData.paymentMethod,
+                        payment_status: 'pending'
+                    }
+                ])
+                .select();
 
-            if (response.status === 201) {
-                setStep(3);
+            if (error) {
+                throw error;
             }
+
+            setStep(3);
         } catch (error) {
             console.error('Registration failed:', error);
-            setErrors({ submit: error.response?.data?.error || "CONNECTION_FAILED" });
+            setErrors({ submit: error.message || "CONNECTION_FAILED" });
         } finally {
             setIsSubmitting(false);
         }

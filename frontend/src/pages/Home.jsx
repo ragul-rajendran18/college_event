@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, ArrowDown, Sparkles, Filter, LayoutGrid } from 'lucide-react';
 import { events as mockEvents } from '../data/events';
 import EventCard from '../components/EventCard';
+import { supabase } from '../supabaseClient';
 
 const Home = () => {
     const [events, setEvents] = useState([]);
@@ -13,11 +14,15 @@ const Home = () => {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/events');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .order('date', { ascending: true });
+
+                if (error) {
+                    throw error;
                 }
-                const data = await response.json();
+
                 if (Array.isArray(data) && data.length > 0) {
                     setEvents(data);
                 } else {
